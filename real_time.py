@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from sqlalchemy import create_engine
 import numpy as np
 import os
+import datetime
 
 def main():
 
@@ -92,6 +93,11 @@ def main():
         </p>
     ''', unsafe_allow_html=True)
 
+    # add in options to select by boroguhs
+    st.sidebar.header("Borough")
+
+    borough = st.sidebar.selectbox(label='Use the dropdown options to view data for all boroughs or just a single borough', 
+        options= ['All Boroughs', 'Manhattan', 'Brooklyn', 'Staten Island', 'Queens', 'Bronx'], index=0)
 
     # two checkbox for residential if it is relevant
     if devs_or_units == 'Number of developments':
@@ -135,9 +141,13 @@ def main():
 
     agg_db = agg_db.loc[agg_db.job_type.isin(slctd_job_types)]
 
-    job_str = slctd_job_types.tolist()
+    if borough != 'All Boroughs':
+
+        agg_db = agg_db.loc[agg_db.boro == borough]
 
     # aggreage either developments or net units on a weekly level. 
+    job_str = slctd_job_types.tolist() # use the job string for appropriate titles
+
     if devs_or_units == 'Number of developments':
 
         # calculate the weekly count for the interested 
@@ -203,11 +213,30 @@ def main():
     """)
 
 
+def fill_zeros(agg_db, conn):
+    
+    f = pd.read_sql('''SELECT * FROM zero_fill_template''', con=conn)
+               
+    df = pd.DataFrame(columns=agg_db.columns)
+
+    for year in agg_db.year.unique():
+
+        new = f.merge(agg_db.loc[agg_db.year == year], how='left', on=['week', 'job_type', 'occ_category', 'boro']).fillna(value=0)
+
+        new.year = year
+        
+        if year == 2020:
+            
+            new = new.loc[new.week <= int(datetime.datetime.now().strftime("%V"))]
+
+        df = pd.concat([df, new], axis=0, sort=True)
+
+    return df
+
 @st.cache
 def load_data(date_field):
 
     conn = create_engine(os.environ.get('ENGINE'))
-
 
     agg_db = pd.read_sql('''
     SELECT 
@@ -215,7 +244,8 @@ def load_data(date_field):
         Extract('week' FROM {0} :: timestamp) AS week, 
         job_type, 
         occ_category, 
-        COUNT(*) as total_count,
+        boro,
+        coalesce(COUNT(*), 0) as total_count,
         SUM(units_net :: NUMERIC) as total_units_net
 
     FROM   devdb_export 
@@ -224,15 +254,20 @@ def load_data(date_field):
         Extract('year' FROM {0} :: timestamp) >= 2010
         AND 
         Extract('week' FROM {0} :: timestamp) <> 1
+        AND 
+        Extract('week' FROM {0} :: timestamp) <> 53
 
     GROUP  BY 
         Extract('year' FROM {0} :: timestamp), 
         Extract('week' FROM {0} :: timestamp), 
         job_type, 
-        occ_category
+        occ_category,
+        boro
     '''.format(date_field), con = conn)
+    
+    filled_agg_db = fill_zeros(agg_db, conn)
 
-    return agg_db
+    return filled_agg_db
 
 def calculate_three_year_avg(agg_week):
 
@@ -271,11 +306,9 @@ def visualize(three_year_avg, agg_week, graph_format):
     fig.add_trace(go.Scatter(
         x=one_year.week,
         y=one_year.iloc[:, 2],
-        #legendgroup=lgg,
         name='2020',
         mode="lines",
-        line=dict(color='black'),
-        #visible=
+        line=dict(color='black')
     ))
 
     # plot the other years in gray
@@ -291,7 +324,6 @@ def visualize(three_year_avg, agg_week, graph_format):
             continue
         else:
             clr = 'grey'
-            #lgg = 'bottom'
             vb = 'legendonly'
 
         one_year = agg_week.loc[agg_week.year == yr] 
@@ -299,7 +331,6 @@ def visualize(three_year_avg, agg_week, graph_format):
         fig.add_trace(go.Scatter(
             x=one_year.week,
             y=one_year.iloc[:, 2],
-            #legendgroup=lgg,
             name=yr,
             mode="lines",
             line=dict(color=clr),
