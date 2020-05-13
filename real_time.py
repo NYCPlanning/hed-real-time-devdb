@@ -10,17 +10,17 @@ import datetime
 
 def main():
 
-    st.title('Real Time Development Database')
-
-
+##########################################
+#Side Panel functionality
+##########################################
     # let user select the aggregation date field and load the data bsed on selection
     st.sidebar.header("Horizontal Axis")
 
-    date_field = st.sidebar.radio(label="", options=["Job Application Filing Date", "Permit Issued Date",
-    'Job Completion Date'], index=0)
+    date_field = st.sidebar.radio(label="", options=["Job application filing date", "Permit issued date",
+    'Job completion date'], index=0)
 
-    date_field_dict = {"Job Application Filing Date": "date_filed", "Permit Issued Date": "date_permittd",
-    'Job Completion Date': "date_statusx"}
+    date_field_dict = {"Job application filing date": "date_filed", "Permit issued date": "date_permittd",
+    'Job completion date': "date_statusx"}
 
     agg_db = load_data(date_field_dict[date_field])
 
@@ -29,19 +29,19 @@ def main():
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            <strong>Job Application Filing Date</strong>: The first step in the process for all job applications  
+            <strong>Job application filing date</strong>: The first step in the process for all job applications  
         </p>
     ''', unsafe_allow_html=True)
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            <strong>Permit Issued Date</strong>: When construction work may begin  
+            <strong>Permit issued date</strong>: When construction work may begin  
         </p>
     ''', unsafe_allow_html=True)
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            <strong>Job Completion</strong>: When the earliest certificate of occuapancy if issued  
+            <strong>Job completion date</strong>: When the earliest certificate of occuapancy is issued  
             (for buildings and alterations). For demolitions, this   
             date is equal to the permit issued date 
         </p>
@@ -51,36 +51,36 @@ def main():
     # let user select the aggregation date field and load the data bsed on selection
     st.sidebar.header("Vertical Axis")
 
-    devs_or_units = st.sidebar.radio(label="", options=["Number of developments", "Sum by residential units"], index=0)
+    devs_or_units = st.sidebar.radio(label="", options=["Number of developments", "Sum of residential units"], index=0)
     
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            <strong>Number of developments</strong>: the count DOB jobs filed/issued that week
+            <strong>Number of developments</strong>: The count DOB jobs filed/issued that week
         </p>
     ''', unsafe_allow_html=True)
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            <strong>Sum by residential units</strong>: the net number of residential units associated with the DOB jobs
+            <strong>Sum of residential units</strong>: The net number of residential units associated with the DOB jobs
         </p>
     ''', unsafe_allow_html=True)
 
     # job type selection
     st.sidebar.header("Job Type")
 
-    new_building = st.sidebar.checkbox('New Building', value=True)
+    new_building = st.sidebar.checkbox('New building', value=True)
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            an application to build a new structure
+            An application to build a new structure
         </p>
     ''', unsafe_allow_html=True)
 
-    alteration = st.sidebar.checkbox('Major Alteration', value=True)
+    alteration = st.sidebar.checkbox('Major alteration', value=True)
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            an "A1" alteration changing use, egress, or occupancy of the building
+            An "A1" alteration changing use, egress, or occupancy of the building
         </p>
     ''', unsafe_allow_html=True)
 
@@ -89,7 +89,7 @@ def main():
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
-            fully or partially demolish an existing building
+            Fully or partially demolish an existing building
         </p>
     ''', unsafe_allow_html=True)
 
@@ -117,76 +117,93 @@ def main():
         
         st.sidebar.markdown(f'''
             <p style="{subtext_style}">
-                Building is entirely non-residential
+                The proposed or existing building is entirely non-residential
             </p>
         ''', unsafe_allow_html=True)
 
         st.sidebar.info("Please note **at least one** of options above should be selected")
         
-        rmask = np.array([residential, nonresidential])
+        # residential and nonresidential 
+        if residential and nonresidential:
 
-        use_types = np.array(['Residential', 'Other'])
-        
-        slctd_use_types = use_types[rmask]
+            agg_db = agg_db
 
-        # select only the dataframe with residential unit if residential checkbox is ticked
-        agg_db = agg_db.loc[agg_db.occ_category.isin(slctd_use_types)]
+            use_str = ''
+
+        elif residential:
+
+            agg_db = agg_db.loc[agg_db.occ_category == 'Residential']
+
+            use_str = 'Residential '
+
+        elif nonresidential:
+
+            agg_db = agg_db.loc[agg_db.occ_category == 'Other']
+
+            use_str = 'Non-Residential '
 
     # mask use to create array for selection using the dataframe
-    jmask = np.array([alteration, demolition, new_building])
+    jmask = np.array([new_building, alteration, demolition])
 
-    job_types = np.array(['Alteration', 'Demolition', 'New Building'])
+    job_types = np.array(['New Building', 'Alteration', 'Demolition'])
     
     slctd_job_types = job_types[jmask]
 
     agg_db = agg_db.loc[agg_db.job_type.isin(slctd_job_types)]
 
+    job_str = slctd_job_types.tolist() # use the job string for appropriate titles
+
+    # set the boroughs strings
     if borough != 'All Boroughs':
 
         agg_db = agg_db.loc[agg_db.boro == borough]
 
-    # aggreage either developments or net units on a weekly level. 
-    job_str = slctd_job_types.tolist() # use the job string for appropriate titles
+        bo_str = borough
 
+    else:
+
+        bo_str = 'NYC'
+
+    # aggreage either developments or net units on a weekly level. 
     if devs_or_units == 'Number of developments':
 
         # calculate the weekly count for the interested 
         agg_week = agg_db.groupby(['year', 'week']).agg({'total_count': 'sum'}).reset_index()
 
-        if date_field == 'Job Application Filing Date':
+        if date_field == 'Job application filing date':
 
-            graph_format = [(',').join(job_str) + ' Job Application Filed Per Week', 
-            'Number of Application Filed']
+            graph_format = ['Job Applications Filed Per Week in ' + bo_str + ' (in ' + use_str + (', ').join(job_str) + ')', 
+            'Number of Applications Filed']
     
-        elif date_field == 'Permit Issued Date':
+        elif date_field == 'Permit issued date':
 
-            graph_format = [(',').join(job_str) + ' Permits Issued Per Week',
+            graph_format = [' Permits Issued Per Week in ' + bo_str + ' (in ' + use_str + (', ').join(job_str) + ')',
             'Number of Permits Issued']
         
         else:
 
-            graph_format = [(',').join(job_str) + 'Certificate of Occupancy Per Week',
-            'Number of Certificate of Occupancy']
+            graph_format = ['Certificates of Occupancy Issued Per Week in '  + bo_str + ' (in ' + use_str +  (', ').join(job_str) + ')',
+            'Number of Certificates of Occupancy']
 
     else:
 
         # calculate the weekly residentia units based on the 
         agg_week = agg_db.groupby(['year', 'week']).agg({'total_units_net': 'sum'}).reset_index()
 
-        if date_field == 'Job Application Filing Date':
+        if date_field == 'Job application filing date':
 
-            graph_format = ['Net Residential Units ' + (',').join(job_str) + ' in Job Application Filed Per Week', 
-            'Number of Residential Units in Application Filed']
+            graph_format = ['Net Units in Job Applications Filed Per Week in ' + bo_str + ' (in ' + (', ').join(job_str) + ')', 
+            'Number of Residential Units in Applications Filed']
     
-        elif date_field == 'Permit Issued Date':
+        elif date_field == 'Permit issued date':
 
-            graph_format = ['Net Residential Units ' + (',').join(job_str) + ' in Permits Issued Per Week',
+            graph_format = ['Net Units in Permis Issued Per Week in ' + bo_str + ' (in ' + (', ').join(job_str) + ')',
             'Number of Residential Units in Permits Issued']
         
         else:
 
-            graph_format = ['Net Residential Units ' + (',').join(job_str) + ' in Certificate of Occupancy Per Week',
-            'Number of Residential Units in Certificate of Occupancy']
+            graph_format = ['Net Units in Certificates of Occupancy Issued Per Week in ' + bo_str + ' (in ' + (', ').join(job_str) + ')',
+            'Number of Residential Units in Certificates of Occupancy']
 
     # adjust the year field to string for plotting     
     agg_week.year = agg_week.year.astype(int).astype(str)
@@ -194,23 +211,54 @@ def main():
     # add the three year averages to the plot
     three_year_avg = calculate_three_year_avg(agg_week)
 
+ #########################################################################
+ #Main Panel content starts here
+ ##########################################################################   
+
+    st.title('Real Time Development Tracker')
+
+    st.header('About the Tracker')
+    st.info("""
+    
+    On March 27, 2020 NYS issued a ban on all nonessential construction in 
+    effort to contain Covid-19. Since this time, the definition of [**essential**](www.google.com) has widened 
+    somewhat but reductions in building application and permit activity are still apparent. 
+    This tracker displays weekly data [**updates**](www.google.com) from the Department of Buildings, showing major 
+    construction (new buildings, major alterations, and demolitions) at three important 
+    milestones (application filed, permit issued, and certificate of occupancy issued).  
+      
+    + Use the left-hand pane to specify milestone date, aggregation type, DOB job type, and building use type. 
+    + Click or hover on the chart itself to customize years displayed, zoom in on the plot area, and see data values. 
+    """)
+
     # create a accruate title for the graph based on the criteria selected (job type,)
     st.subheader(graph_format[0])
 
     visualize(three_year_avg, agg_week, graph_format)
 
+    #start the executive summary section
+    st.header('Excutive Summary for Week Beginning May 3rd')
+
     st.info("""
-    ### HINTS:
-    This is a interative [plotly express plot](https://plotly.com/python/plotly-express/). Here are few tips about how to 
-    interact with the plot.
-    + **Double click on any year or groups in the colored legend on the right side of the plot to
-    to focus on single line.** You can then add the other relevant group back onto the plots by single-click on them
-    individuallly. 
-    + **You then also click and drag to zoom into a specific area of the plot.** Notice the axis will also
-    adjust with as the zoom is performed. 
-    + You can click on two-arrows icons on the top right corner on the fringe of the
-    plot. **You will only see this icon when your cursos is hovering on the plot.** 
+    ### Job Applications Filings
+    + Work need not be deemed essential in order to file a job application.
+    + Applications for all major construction projects (new buildings, major alterations, and demolitions) dropped beginning in week 12 (March 16) and hit a record low for the year on week 14 (March 30).
+    + Applications have been gradually increasing since week 15 (April 6) but are still about half of what was filed at this time during the last three years.
+    +Job applications for new buildings with residences bottomed out in weeks 15 and 16 and have picked up somewhat in weeks 17 (April 20) and 18 (April 27).
+    + Despite the relatively small number of applications for new residential buildings, the number of units associated with those jobs is still high, suggesting that applicants are primarily submitting for larger jobs. 
+    
+    ### Permits Issued
+    + Covid-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for essential construction.  
+    + 2020 permits for all new buildings, major alterations, and demolitions were keeping pace with the last three years until week 12 (March 16), when they began to drop to only one or two per week. The few permits that have been issued since the construction ban took effect on March 27 (week 14) include residential and non-residential buildings alike. 
+    
+    ### Certificates of Occupancy
+    + COs are currently only being issued for essential construction.
+    + Certificate of occupancy (CO) issuance began to drop in week 12 (March 16), and has continued dropping through the most current data.
+    + COs issued for new residential buildings is currently about 10% of normal volume, containing about 20% of normal unit counts as defined by the previous three years.
+    + While CO issuance of residential units is declining in new building construction, there was a recent boost of units from alterations. Weeks 17 and 18 saw a higher number of completed residential units in alterations than in previous years even though these are occurring in a very small number of buildings. This supports the observation once again that only large residential buildings are being granted essential construction status, likely because they contain affordable units.
     """)
+
+
 
 
 def fill_zeros(agg_db, conn):
@@ -340,6 +388,7 @@ def visualize(three_year_avg, agg_week, graph_format):
 
     # plot formatting
     fig.update_layout(
+        #title=graph_format[0],
         xaxis_title='Week Number',
         yaxis_title=graph_format[1],
         template='plotly_white'
