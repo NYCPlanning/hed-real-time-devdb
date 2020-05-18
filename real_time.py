@@ -25,7 +25,7 @@ def main():
     agg_db = load_data(date_field_dict[date_field])
 
     #margin: -1.2rem 5px 1rem 5px
-    subtext_style="font-size:0.8rem; margin: -0.5rem 5px 1.5rem 5px; color:#969696; padding: 0.2rem !important;"
+    subtext_style="font-size:0.8rem; margin: -0.5rem 5px 0.8rem 5px; color:#808080; padding: 0.2rem !important;"
 
     st.sidebar.markdown(f'''
         <p style="{subtext_style}">
@@ -96,8 +96,8 @@ def main():
     # add in options to select by boroguhs
     st.sidebar.header("Borough")
 
-    borough = st.sidebar.selectbox(label='Use the dropdown options to view data for all boroughs or just a single borough', 
-        options= ['All Boroughs', 'Manhattan', 'Brooklyn', 'Staten Island', 'Queens', 'Bronx'], index=0)
+    borough = st.sidebar.selectbox(label='', 
+        options= ['All boroughs', 'Manhattan', 'Brooklyn', 'Staten Island', 'Queens', 'Bronx'], index=0)
 
     # two checkbox for residential if it is relevant
     if devs_or_units == 'Number of developments':
@@ -121,7 +121,7 @@ def main():
             </p>
         ''', unsafe_allow_html=True)
 
-        st.sidebar.info("Please note **at least one** of options above should be selected")
+        st.sidebar.info("Please note **at least one** Use Type must be selected")
         
         # residential and nonresidential 
         if residential and nonresidential:
@@ -153,8 +153,10 @@ def main():
 
     job_str = slctd_job_types.tolist() # use the job string for appropriate titles
 
+    job_str = [s + 's' for s in job_str]
+
     # set the boroughs strings
-    if borough != 'All Boroughs':
+    if borough != 'All boroughs':
 
         agg_db = agg_db.loc[agg_db.boro == borough]
 
@@ -260,7 +262,6 @@ def main():
 
 
 
-
 def fill_zeros(agg_db, conn):
     
     f = pd.read_sql('''SELECT * FROM zero_fill_template''', con=conn)
@@ -275,7 +276,7 @@ def fill_zeros(agg_db, conn):
         
         if year == 2020:
             
-            new = new.loc[new.week < int(datetime.datetime.now().strftime("%V"))]
+            new = new.loc[new.week < (int(datetime.datetime.now().strftime("%V")) - 1)]
 
         df = pd.concat([df, new], axis=0, sort=True)
 
@@ -285,7 +286,7 @@ def fill_zeros(agg_db, conn):
 def load_data(date_field):
 
     conn = create_engine(os.environ.get('ENGINE'))
-
+    
     agg_db = pd.read_sql('''
     SELECT 
         Extract('year' FROM {0} :: timestamp) AS year, 
@@ -335,7 +336,7 @@ def calculate_three_year_avg(agg_week):
 
     avg_11_13['year'] = 'Three-Year Average 2011 - 2013'
 
-    three_year_avg = pd.concat([avg_17_19, avg_14_16, avg_11_13], axis=0)
+    three_year_avg = pd.concat([avg_17_19, avg_14_16, avg_11_13, agg_week], axis=0)
 
     three_year_avg.sort_values(by=['year', 'week'], ascending=False, inplace=True)
 
@@ -343,46 +344,47 @@ def calculate_three_year_avg(agg_week):
 
 def visualize(three_year_avg, agg_week, graph_format):
 
-    #aggregate field
-    af = agg_week.columns[2]
-
-    # ploting with plotly express
-    fig = px.line(three_year_avg, x="week", y=af, color="year")
-
     # add the 2020 in black
-    one_year = agg_week.loc[agg_week.year == '2020'] 
+    one_year = three_year_avg.loc[three_year_avg.year == '2020']
+
+    fig = go.Figure()
+
     fig.add_trace(go.Scatter(
         x=one_year.week,
-        y=one_year.iloc[:, 2],
+        y=one_year.iloc[:, 1],
         name='2020',
         mode="lines",
-        line=dict(color='black')
+        line=dict(color='black'),
+        #hovertext = ("Week Number", "Count")
     ))
 
-    # plot the other years in gray
-    other_years = ['2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017','2018','2019', '2020']
+    # color palette for the three year average 
+    color = ['red', 'blue', 'green']
+    count = 0
 
-    other_years.sort(reverse=True)
- 
-
-    for yr in other_years:
-
+    for yr in three_year_avg.year.unique():
+        
         # plot 2020 in black and other years in grey
-        if yr == '2020':
+        if not yr.startswith('2'):
+            clr = color[count]
+            vb='legendonly'
+            count += 1
+        elif yr == '2020':
             continue
         else:
             clr = 'grey'
             vb = 'legendonly'
 
-        one_year = agg_week.loc[agg_week.year == yr] 
+        one_year = three_year_avg.loc[three_year_avg.year == yr] 
 
         fig.add_trace(go.Scatter(
             x=one_year.week,
-            y=one_year.iloc[:, 2],
+            y=one_year.iloc[:, 1],
             name=yr,
             mode="lines",
             line=dict(color=clr),
-            visible=vb
+            visible=vb,
+            #hovertext = ("Week Number", "Count")
         ))
 
 
