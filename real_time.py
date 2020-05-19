@@ -24,6 +24,8 @@ def main():
 
     agg_db = load_data(date_field_dict[date_field])
 
+    #st.dataframe(agg_db[(agg_db.year == 2020) & (agg_db.week == 20)])
+
     #margin: -1.2rem 5px 1rem 5px
     subtext_style="font-size:0.8rem; margin: -0.5rem 5px 0.8rem 5px; color:#808080; padding: 0.2rem !important;"
 
@@ -211,7 +213,7 @@ def main():
     agg_week.year = agg_week.year.astype(int).astype(str)
 
     # add the three year averages to the plot
-    three_year_avg = calculate_three_year_avg(agg_week)
+    show, no_show = calculate_three_year_avg(agg_week)
 
  #########################################################################
  #Main Panel content starts here
@@ -236,7 +238,7 @@ def main():
     # create a accruate title for the graph based on the criteria selected (job type,)
     st.subheader(graph_format[0])
 
-    visualize(three_year_avg, agg_week, graph_format)
+    visualize(show, no_show, graph_format)
 
     #start the executive summary section
     st.header('Excutive Summary for Week Beginning May 3rd')
@@ -246,7 +248,7 @@ def main():
     + Work need not be deemed essential in order to file a job application.
     + Applications for all major construction projects (new buildings, major alterations, and demolitions) dropped beginning in week 12 (March 16) and hit a record low for the year on week 14 (March 30).
     + Applications have been gradually increasing since week 15 (April 6) but are still about half of what was filed at this time during the last three years.
-    +Job applications for new buildings with residences bottomed out in weeks 15 and 16 and have picked up somewhat in weeks 17 (April 20) and 18 (April 27).
+    + Job applications for new buildings with residences bottomed out in weeks 15 and 16 and have picked up somewhat in weeks 17 (April 20) and 18 (April 27).
     + Despite the relatively small number of applications for new residential buildings, the number of units associated with those jobs is still high, suggesting that applicants are primarily submitting for larger jobs. 
     
     ### Permits Issued
@@ -276,10 +278,10 @@ def fill_zeros(agg_db, conn):
         
         if year == 2020:
             
-            new = new.loc[new.week < (int(datetime.datetime.now().strftime("%V")) - 1)]
+            new = pd.DataFrame(new.loc[new.week < int(datetime.datetime.now().strftime("%V"))])
 
         df = pd.concat([df, new], axis=0, sort=True)
-
+    
     return df
 
 @st.cache
@@ -301,10 +303,6 @@ def load_data(date_field):
 
     WHERE
         Extract('year' FROM {0} :: timestamp) >= 2010
-        AND 
-        Extract('week' FROM {0} :: timestamp) <> 1
-        AND 
-        Extract('week' FROM {0} :: timestamp) <> 53
 
     GROUP  BY 
         Extract('year' FROM {0} :: timestamp), 
@@ -336,33 +334,25 @@ def calculate_three_year_avg(agg_week):
 
     avg_11_13['year'] = 'Three-Year Average 2011 - 2013'
 
-    three_year_avg = pd.concat([avg_17_19, avg_14_16, avg_11_13, agg_week], axis=0)
+    show = pd.concat([avg_17_19, agg_week.loc[agg_week.year == '2020']], axis=0)
 
-    three_year_avg.sort_values(by=['year', 'week'], ascending=False, inplace=True)
+    no_show = pd.concat([avg_14_16, avg_11_13, agg_week.loc[agg_week.year != '2020']], axis=0)
 
-    return three_year_avg
+    return show, no_show
 
-def visualize(three_year_avg, agg_week, graph_format):
+def visualize(show, no_show, graph_format):
 
-    # add the 2020 in black
-    one_year = three_year_avg.loc[three_year_avg.year == '2020']
+    af = show.columns[1]
 
-    fig = go.Figure()
-
-    fig.add_trace(go.Scatter(
-        x=one_year.week,
-        y=one_year.iloc[:, 1],
-        name='2020',
-        mode="lines",
-        line=dict(color='black'),
-        #hovertext = ("Week Number", "Count")
-    ))
+    fig = px.line(show, x="week", y=af, color="year",category_orders={'year':['2020', 'Three-Year Average 2017 - 2019']},
+            color_discrete_sequence=['#000000', '#FF0000']
+            )
 
     # color palette for the three year average 
-    color = ['red', 'blue', 'green']
+    color = ['blue', 'green']
     count = 0
 
-    for yr in three_year_avg.year.unique():
+    for yr in no_show.year.unique():
         
         # plot 2020 in black and other years in grey
         if not yr.startswith('2'):
@@ -375,7 +365,7 @@ def visualize(three_year_avg, agg_week, graph_format):
             clr = 'grey'
             vb = 'legendonly'
 
-        one_year = three_year_avg.loc[three_year_avg.year == yr] 
+        one_year = no_show.loc[no_show.year == yr] 
 
         fig.add_trace(go.Scatter(
             x=one_year.week,
