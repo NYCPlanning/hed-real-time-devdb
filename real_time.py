@@ -213,7 +213,7 @@ def main():
     agg_week.year = agg_week.year.astype(int).astype(str)
 
     # add the three year averages to the plot
-    show, no_show = calculate_three_year_avg(agg_week)
+    three_year_avg = calculate_three_year_avg(agg_week)
 
  #########################################################################
  #Main Panel content starts here
@@ -238,10 +238,31 @@ def main():
     # create a accruate title for the graph based on the criteria selected (job type,)
     st.subheader(graph_format[0])
 
-    visualize(show, no_show, graph_format)
+    visualize(three_year_avg, graph_format)
 
     #start the executive summary section
-    st.header('Excutive Summary for Week Beginning May 3rd')
+    st.header('Excutive Summary for Week Beginning May 11')
+
+    st.info("""
+    ### Job Applications Filings
+    + Work need not be deemed essential in order to file a job application.  
+    + Applications for all major construction projects (new buildings, major alterations, and demolitions) dropped beginning in week 12 (March 16) and hit a record low for the year on week 14 (March 30).    
+    + Applications have been gradually increasing since week 15 (April 6), with a dramatic spike on week 19 (May 4) and returning to levels that are about half of what was filed at this time during the last three years.  
+    + Despite the diminished number of applications for new residential buildings, the number of units associated with those jobs is very high, suggesting that applicants are primarily submitting for larger jobs. 
+
+    ### Permits Issued
+    + Covid-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for [**essential construction**](https://www1.nyc.gov/assets/buildings/html/essential-active-construction.html).  
+    + 2020 permits for all new buildings, major alterations, and demolitions were keeping pace with the last three years until week 12 (March 16), when they began to drop less than 10% of typical volumes. The few permits that have been issued since the construction ban took effect on March 27 (week 14) include residential and non-residential buildings alike. 
+
+    ### Certificates of Occupancy
+    + Certificates of Occupancy (COs) are currently only being issued for essential construction.  
+    + CO issuance began to drop in week 12 (March 16) and continues to decline. Last week had the lowest volume of COs issued since the pandemic began.  
+    + New buildings with residences saw a brief spike in week 19 (May 4) but dropped to historic lows last week (May 11).  
+    + The last 4 weeks have seen the number of COs issued for new buildings with residences drop by about half compared to the last three years, and residential units drop by about one third.
+    """)
+
+    #start the executive summary section
+    st.header('Excutive Summary for Week Beginning May 3')
 
     st.info("""
     ### Job Applications Filings
@@ -266,7 +287,7 @@ def main():
 
 def fill_zeros(agg_db, conn):
     
-    f = pd.read_sql('''SELECT * FROM zero_fill_template''', con=conn)
+    f = pd.read_sql('''SELECT * FROM zero_fill_template WHERE week <> 53''', con=conn)
                
     df = pd.DataFrame(columns=agg_db.columns)
 
@@ -288,7 +309,7 @@ def fill_zeros(agg_db, conn):
 def load_data(date_field):
 
     conn = create_engine(os.environ.get('ENGINE'))
-    
+
     agg_db = pd.read_sql('''
     SELECT 
         Extract('year' FROM {0} :: timestamp) AS year, 
@@ -334,56 +355,35 @@ def calculate_three_year_avg(agg_week):
 
     avg_11_13['year'] = 'Three-Year Average 2011 - 2013'
 
-    show = pd.concat([avg_17_19, agg_week.loc[agg_week.year == '2020']], axis=0)
+    three_year_avg = pd.concat([avg_17_19, avg_14_16, avg_11_13, agg_week], axis=0)
 
-    no_show = pd.concat([avg_14_16, avg_11_13, agg_week.loc[agg_week.year != '2020']], axis=0)
+    return three_year_avg
 
-    return show, no_show
+#def visualize(show, no_show, graph_format):
+def visualize(three_year_avg, graph_format):
 
-def visualize(show, no_show, graph_format):
+    af = three_year_avg.columns[1]
 
-    af = show.columns[1]
+    #fig = go.Figure()
 
-    fig = px.line(show, x="week", y=af, color="year",category_orders={'year':['2020', 'Three-Year Average 2017 - 2019']},
-            color_discrete_sequence=['#000000', '#FF0000']
+    fig = px.line(three_year_avg, x="week", y=af, color="year",category_orders={'year':['Three-Year Average 2017 - 2019', 'Three-Year Average 2014 - 2016', 'Three-Year Average 2011 - 2013',
+            '2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010']},
+            color_discrete_sequence=[ '#FF0000','#228B22','#00BFFF', '#000000',
+             '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3']
             )
+    legend_only = ['Three-Year Average 2014 - 2016', 'Three-Year Average 2011 - 2013','2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010']
 
-    # color palette for the three year average 
-    color = ['blue', 'green']
-    count = 0
-
-    for yr in no_show.year.unique():
-        
-        # plot 2020 in black and other years in grey
-        if not yr.startswith('2'):
-            clr = color[count]
-            vb='legendonly'
-            count += 1
-        elif yr == '2020':
-            continue
-        else:
-            clr = 'grey'
-            vb = 'legendonly'
-
-        one_year = no_show.loc[no_show.year == yr] 
-
-        fig.add_trace(go.Scatter(
-            x=one_year.week,
-            y=one_year.iloc[:, 1],
-            name=yr,
-            mode="lines",
-            line=dict(color=clr),
-            visible=vb,
-            #hovertext = ("Week Number", "Count")
-        ))
-
+    fig.for_each_trace(
+        lambda trace: trace.update(visible='legendonly') if trace.name in legend_only else()
+    )
 
     # plot formatting
     fig.update_layout(
         #title=graph_format[0],
         xaxis_title='Week Number',
         yaxis_title=graph_format[1],
-        template='plotly_white'
+        template='plotly_white',
+        hovermode="x unified"
     )
 
     # plot with streamlit
