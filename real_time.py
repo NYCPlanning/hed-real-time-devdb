@@ -232,7 +232,7 @@ def main():
     milestones (application filed, permit issued, and certificate of occupancy issued).  
       
     Please let us know if you have any comments and questions about this open-source dashboard 
-    by [raising an issue](https://github.com/NYCPlanning/hed-real-time-devdb/issues) in the project [repo page](https://github.com/NYCPlanning/hed-real-time-devdb), or emailing HED_DL@planning.nyc.gov.   
+    by [**raising an issue**](https://github.com/NYCPlanning/hed-real-time-devdb/issues) in the project [**github repo**](https://github.com/NYCPlanning/hed-real-time-devdb), or emailing **HED_DL@planning.nyc.gov**.   
       
     + Use the left-hand pane to specify milestone date, aggregation type, DOB job type, and building use type. 
     + Click or hover on the chart itself to customize years displayed, zoom in on the plot area, and see data values. 
