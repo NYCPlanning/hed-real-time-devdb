@@ -24,8 +24,6 @@ def main():
 
     agg_db = load_data(date_field_dict[date_field])
 
-    #st.dataframe(agg_db[(agg_db.year == 2020) & (agg_db.week == 20)])
-
     #margin: -1.2rem 5px 1rem 5px
     subtext_style="font-size:0.8rem; margin: -0.5rem 5px 0.8rem 5px; color:#808080; padding: 0.2rem !important;"
 
@@ -232,7 +230,7 @@ def main():
     milestones (application filed, permit issued, and certificate of occupancy issued).  
       
     Please let us know if you have any comments and questions about this open-source dashboard 
-    by [**raising an issue**](https://github.com/NYCPlanning/hed-real-time-devdb/issues) in the project [**github repo**](https://github.com/NYCPlanning/hed-real-time-devdb), or emailing **HED_DL@planning.nyc.gov**.   
+    by [**raising an issue**](https://github.com/NYCPlanning/hed-real-time-devdb/issues) in the project [**github repo**](https://github.com/NYCPlanning/hed-real-time-devdb), or emailing **HED_DL(at)planning.nyc.gov**.   
       
     + Use the left-hand pane to specify milestone date, aggregation type, DOB job type, and building use type. 
     + Click or hover on the chart itself to customize years displayed, zoom in on the plot area, and see data values. 
