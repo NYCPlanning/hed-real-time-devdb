@@ -24,6 +24,8 @@ def main():
 
     agg_db = load_data(date_field_dict[date_field])
 
+    st.dataframe(agg_db)
+
     #margin: -1.2rem 5px 1rem 5px
     subtext_style="font-size:0.8rem; margin: -0.5rem 5px 0.8rem 5px; color:#808080; padding: 0.2rem !important;"
 
@@ -223,7 +225,7 @@ def main():
     st.info("""
     
     On March 27, 2020 NYS issued a ban on all nonessential construction in 
-    effort to contain Covid-19. Since this time, the definition of [**essential**](https://www1.nyc.gov/assets/buildings/pdf/essential_vs_non-essential.pdf) has widened 
+    effort to contain COVID-19. Since this time, the definition of [**essential**](https://www1.nyc.gov/assets/buildings/pdf/essential_vs_non-essential.pdf) has widened 
     somewhat but reductions in building application and permit activity are still apparent. 
     This tracker displays weekly data [**updates**](https://data.cityofnewyork.us/Housing-Development/DOB-Job-Application-Filings/ic3t-wcy2) from the Department of Buildings, showing major 
     construction (new buildings, major alterations, and demolitions) at three important 
@@ -233,34 +235,15 @@ def main():
     by [**raising an issue**](https://github.com/NYCPlanning/hed-real-time-devdb/issues) in the project [**github repo**](https://github.com/NYCPlanning/hed-real-time-devdb), or emailing **HED_DL(at)planning.nyc.gov**.   
       
     + Use the left-hand pane to specify milestone date, aggregation type, DOB job type, and building use type. 
-    + Click or hover on the chart itself to customize years displayed, zoom in on the plot area, and see data values. 
+    + Click or hover on the chart itself to customize years displayed, zoom in on the plot area, and see data values.
+
+    **Note: the release of DOB Open Data has been delayed. The lastest available data is through the week of May 3. Once Open Data is updated so will this Tracker.** 
     """)
 
     # create a accruate title for the graph based on the criteria selected (job type,)
     st.subheader(graph_format[0])
 
     visualize(three_year_avg, graph_format)
-
-    #start the executive summary section
-    st.header('Excutive Summary for Week Beginning May 11')
-
-    st.info("""
-    ### Job Applications Filings
-    + Work need not be deemed essential in order to file a job application.  
-    + Applications for all major construction projects (new buildings, major alterations, and demolitions) dropped beginning in week 12 (March 16) and hit a record low for the year on week 14 (March 30).    
-    + Applications have been gradually increasing since week 15 (April 6), with a dramatic spike on week 19 (May 4) and returning to levels that are about half of what was filed at this time during the last three years.  
-    + Despite the diminished number of applications for new residential buildings, the number of units associated with those jobs is very high, suggesting that applicants are primarily submitting for larger jobs. 
-
-    ### Permits Issued
-    + Covid-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for [**essential construction**](https://www1.nyc.gov/assets/buildings/html/essential-active-construction.html).  
-    + 2020 permits for all new buildings, major alterations, and demolitions were keeping pace with the last three years until week 12 (March 16), when they began to drop less than 10% of typical volumes. The few permits that have been issued since the construction ban took effect on March 27 (week 14) include residential and non-residential buildings alike. 
-
-    ### Certificates of Occupancy
-    + Certificates of Occupancy (COs) are currently only being issued for essential construction.  
-    + CO issuance began to drop in week 12 (March 16) and continues to decline. Last week had the lowest volume of COs issued since the pandemic began.  
-    + New buildings with residences saw a brief spike in week 19 (May 4) but dropped to historic lows last week (May 11).  
-    + The last 4 weeks have seen the number of COs issued for new buildings with residences drop by about half compared to the last three years, and residential units drop by about one third.
-    """)
 
     #start the executive summary section
     st.header('Excutive Summary for Week Beginning May 3')
@@ -274,7 +257,7 @@ def main():
     + Despite the relatively small number of applications for new residential buildings, the number of units associated with those jobs is still high, suggesting that applicants are primarily submitting for larger jobs. 
     
     ### Permits Issued
-    + Covid-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for [**essential construction**](https://www1.nyc.gov/assets/buildings/html/essential-active-construction.html).  
+    + COVID-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for [**essential construction**](https://www1.nyc.gov/assets/buildings/html/essential-active-construction.html).  
     + 2020 permits for all new buildings, major alterations, and demolitions were keeping pace with the last three years until week 12 (March 16), when they began to drop to only one or two per week. The few permits that have been issued since the construction ban took effect on March 27 (week 14) include residential and non-residential buildings alike. 
     
     ### Certificates of Occupancy
@@ -300,7 +283,9 @@ def fill_zeros(agg_db, conn):
         
         if year == 2020:
             
-            new = pd.DataFrame(new.loc[new.week < int(datetime.datetime.now().strftime("%V"))])
+            #new = pd.DataFrame(new.loc[new.week < int(datetime.datetime.now().strftime("%V"))])
+
+            new = pd.DataFrame(new.loc[new.week < 20])
 
         df = pd.concat([df, new], axis=0, sort=True)
     
