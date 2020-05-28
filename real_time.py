@@ -24,8 +24,6 @@ def main():
 
     agg_db = load_data(date_field_dict[date_field])
 
-    st.dataframe(agg_db)
-
     #margin: -1.2rem 5px 1rem 5px
     subtext_style="font-size:0.8rem; margin: -0.5rem 5px 0.8rem 5px; color:#808080; padding: 0.2rem !important;"
 
