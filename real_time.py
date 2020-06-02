@@ -235,7 +235,6 @@ def main():
     + Use the left-hand pane to specify milestone date, aggregation type, DOB job type, and building use type. 
     + Click or hover on the chart itself to customize years displayed, zoom in on the plot area, and see data values.
 
-    **Note: the release of DOB Open Data has been delayed. The lastest available data is through the week of May 3. Once Open Data is updated so will this Tracker.** 
     """)
 
     # create a accruate title for the graph based on the criteria selected (job type,)
@@ -244,6 +243,45 @@ def main():
     visualize(three_year_avg, graph_format)
 
     #start the executive summary section
+    st.header('Excutive Summary for Week Beginning May 25')
+
+    st.info("""
+    ### Job Applications Filings
+    + Work need not be deemed essential in order to file a job application.  
+    + Applications for all major construction projects (new buildings, major alterations, and demolitions) dropped beginning in week 12 (March 16) and hit a record low for the year on week 14 (March 30).  
+    + Applications have been gradually increasing since week 15 (April 6), with a dramatic spike on week 19 (May 4) and returning to levels that are about half of what was filed at this time during the last three years. 
+    + Despite the diminished number of applications for new residential buildings, the number of units associated with those jobs is very high, even surpassing the number of units filed for in previous years, suggesting that applicants are primarily submitting for larger jobs. 
+
+    ### Permits Issued
+    + COVID-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for [**essential construction**](https://www1.nyc.gov/assets/buildings/html/essential-active-construction.html).  
+    + 2020 permits for all new buildings, major alterations, and demolitions were keeping pace with the last three years until week 12 (March 16), when they began to drop less than 10% of typical volumes. The few permits that have been issued since the construction ban took effect on March 27 (week 14) include residential and non-residential buildings alike. 
+
+    ### Certificates of Occupancy
+    + Certificates of Occupancy (COs) are currently only being issued for essential construction.  
+    + CO issuance reached a low in week 17 (April 20) and continues to decline and has increased only modestly since then.  
+    + The last two months have seen the number of COs issued for new buildings with residences drop by about half compared to the last three years, and residential units drop by about one third. 
+    """)
+
+    st.header('Excutive Summary for Week Beginning May 11')
+
+    st.info("""
+    ### Job Applications Filings
+    + Work need not be deemed essential in order to file a job application.  
+    + Applications for all major construction projects (new buildings, major alterations, and demolitions) dropped beginning in week 12 (March 16) and hit a record low for the year on week 14 (March 30).  
+    + Applications have been gradually increasing since week 15 (April 6), with a dramatic spike on week 19 (May 4) and returning to levels that are about half of what was filed at this time during the last three years. 
+    + Despite the diminished number of applications for new residential buildings, the number of units associated with those jobs is very high, suggesting that applicants are primarily submitting for larger jobs. 
+
+    ### Permits Issued
+    + COVID-19 and the construction ban had the greatest impact on permits issued, since permits are only currently being issued for [**essential construction**](https://www1.nyc.gov/assets/buildings/html/essential-active-construction.html).  
+    + 2020 permits for all new buildings, major alterations, and demolitions were keeping pace with the last three years until week 12 (March 16), when they began to drop less than 10% of typical volumes. The few permits that have been issued since the construction ban took effect on March 27 (week 14) include residential and non-residential buildings alike. 
+
+    ### Certificates of Occupancy
+    + Certificates of Occupancy (COs) are currently only being issued for essential construction.  
+    + CO issuance began to drop in week 12 (March 16) and continues to decline. Last week had the lowest volume of COs issued since the pandemic began.  
+    + New buildings with residences saw a brief spike in week 19 (May 4) but dropped to historic lows last week (May 11).   
+    + The last 4 weeks have seen the number of COs issued for new buildings with residences drop by about half compared to the last three years, and residential units drop by about one third.  
+    """)
+
     st.header('Excutive Summary for Week Beginning May 3')
 
     st.info("""
