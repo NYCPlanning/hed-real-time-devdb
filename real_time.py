@@ -321,8 +321,6 @@ def fill_zeros(agg_db, conn):
             
             new = pd.DataFrame(new.loc[new.week < int(datetime.datetime.now().strftime("%V"))])
 
-            #new = pd.DataFrame(new.loc[new.week < 20])
-
         df = pd.concat([df, new], axis=0, sort=True)
     
     return df
@@ -331,7 +329,7 @@ def fill_zeros(agg_db, conn):
 def load_data(date_field):
 
     conn = create_engine(os.environ.get('ENGINE'))
-
+   
     agg_db = pd.read_sql('''
     SELECT 
         Extract('year' FROM {0} :: timestamp) AS year, 
@@ -385,24 +383,57 @@ def visualize(three_year_avg, graph_format):
 
     af = three_year_avg.columns[1]
 
-    fig = px.line(three_year_avg, x="week", y=af, color="year",category_orders={'year':['Three-Year Average 2017 - 2019', 'Three-Year Average 2014 - 2016', 'Three-Year Average 2011 - 2013',
+    fig = px.line(three_year_avg, x="week", y=af, color="year",
+        #hover_name='year',
+        #hover_data=['week', af, 'year'],
+        category_orders={'year':['Three-Year Average 2017 - 2019', 'Three-Year Average 2014 - 2016', 'Three-Year Average 2011 - 2013',
             '2020', '2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010']},
-            color_discrete_sequence=[ '#FF0000','#228B22','#00BFFF', '#000000',
+        color_discrete_sequence=[ '#FF0000','#228B22','#00BFFF', '#000000',
              '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3', '#D3D3D3']
             )
     legend_only = ['Three-Year Average 2014 - 2016', 'Three-Year Average 2011 - 2013','2019', '2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010']
+    
+
+    # add the date to 2020 hover text
+    mds = pd.date_range(start=str(2020), end=str(2021), freq='W-MON').strftime("%B %d, %Y").tolist()
+
+    wn = int(datetime.datetime.now().strftime("%V"))
 
     fig.for_each_trace(
         lambda trace: trace.update(visible='legendonly') if trace.name in legend_only else()
     )
 
+    #fig.update_traces(hovertemplate='<i><b>Year</b></i>: %{year}<br><i>Count</i>: %{y: } <br><b>Week number</b>: %{x}<br>'
+    #)
+
+    fig.update_traces(hovertemplate='<i><b>Year</b></i>: 2020<br>' + 
+        '<i><b>Count</b></i>: %{y: }'+
+        '<br><b>Week number</b>: %{x}<br>'+
+        '<b>Week Start Date:</b> %{text}', 
+        text=mds[:wn], 
+        selector={'name': '2020'}
+    )
+ 
+    #fig.for_each_trace(        
+    #    lambda trace: trace.update(#hoverdata=,
+    #    hovertemplate='<i>year</i>: %{year} <br>' + 
+    #    '<i>count</i>: %{y: }'+
+    #    '<br><b>week number</b>: %{x}<br>'+
+    #    '<b>date: %{text}</b>',
+    #    text = mds[:22]) if trace.name == '2020' else()
+    #)   
+
+    
     # plot formatting
+    fig.update_xaxes(showgrid=False)
+
     fig.update_layout(
         #title=graph_format[0],
         xaxis_title='Week Number',
         yaxis_title=graph_format[1],
         template='plotly_white',
-        hovermode="x unified"
+        hovermode="x",
+        
     )
 
     # plot with streamlit
