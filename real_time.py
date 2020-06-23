@@ -335,13 +335,18 @@ def load_data(date_field):
         Extract('year' FROM {0} :: timestamp) AS year, 
         Extract('week' FROM {0} :: timestamp) AS week, 
         job_type, 
-        boro,
         coalesce(COUNT(*), 0) as total_count,
         SUM(classa_net :: NUMERIC) as total_units_net,
-        (CASE 
+        CASE WHEN boro = '1' THEN 'Manhattan' 
+            WHEN boro = '2' THEN 'Bronx' 
+            WHEN boro = '3' THEN 'Brooklyn' 
+            WHEN boro = '4' THEN 'Queens' 
+            WHEN boro = '5' THEN 'Staten Island' 
+        END as boro,
+        CASE 
             WHEN resid_flag IS NULL THEN 'Other'
             ELSE 'Residential'
-        END AS occ_category)
+        END AS occ_category
         
 
     FROM   final_devdb
@@ -354,12 +359,9 @@ def load_data(date_field):
         Extract('week' FROM {0} :: timestamp), 
         job_type, 
         boro,
-        (CASE 
-            WHEN resid_flag IS NULL THEN 'Other'
-            ELSE 'Residential'
-        END AS occ_category)
+        occ_category
     '''.format(date_field), con = conn)
-    
+
     filled_agg_db = fill_zeros(agg_db, conn)
 
     return filled_agg_db
