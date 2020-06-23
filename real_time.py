@@ -335,12 +335,16 @@ def load_data(date_field):
         Extract('year' FROM {0} :: timestamp) AS year, 
         Extract('week' FROM {0} :: timestamp) AS week, 
         job_type, 
-        occ_category, 
         boro,
         coalesce(COUNT(*), 0) as total_count,
-        SUM(units_net :: NUMERIC) as total_units_net
+        SUM(classa_net :: NUMERIC) as total_units_net,
+        (CASE 
+            WHEN resid_flag IS NULL THEN 'Other'
+            ELSE 'Residential'
+        END)
+        
 
-    FROM   devdb_export 
+    FROM   final_devdb
 
     WHERE
         Extract('year' FROM {0} :: timestamp) >= 2010
@@ -349,8 +353,11 @@ def load_data(date_field):
         Extract('year' FROM {0} :: timestamp), 
         Extract('week' FROM {0} :: timestamp), 
         job_type, 
-        occ_category,
-        boro
+        boro,
+        (CASE 
+            WHEN resid_flag IS NULL THEN 'Other'
+            ELSE 'Residential'
+        END)
     '''.format(date_field), con = conn)
     
     filled_agg_db = fill_zeros(agg_db, conn)
