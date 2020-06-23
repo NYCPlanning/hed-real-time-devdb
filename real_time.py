@@ -341,7 +341,7 @@ def load_data(date_field):
         (CASE 
             WHEN resid_flag IS NULL THEN 'Other'
             ELSE 'Residential'
-        END)
+        END AS occ_category)
         
 
     FROM   final_devdb
@@ -357,7 +357,7 @@ def load_data(date_field):
         (CASE 
             WHEN resid_flag IS NULL THEN 'Other'
             ELSE 'Residential'
-        END)
+        END AS occ_category)
     '''.format(date_field), con = conn)
     
     filled_agg_db = fill_zeros(agg_db, conn)
