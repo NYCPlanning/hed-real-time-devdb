@@ -319,7 +319,7 @@ def fill_zeros(agg_db, conn):
         
         if year == 2020:
             
-            new = pd.DataFrame(new.loc[new.week < int(datetime.datetime.now().strftime("%V"))])
+            new = pd.DataFrame(new.loc[new.week < int(datetime.datetime.now().strftime("%W"))])
 
         df = pd.concat([df, new], axis=0, sort=True)
     
